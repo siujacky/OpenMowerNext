@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>vesc_driver</name>
+  <version>2.0.0</version>
+  <description>
+    VESC motor controller driver for ROS2.
+    
+    Provides a serial interface to communicate with Vedder Electronic Speed
+    Controllers (VESC) used in the OpenMower project.
+    
+    Ported from open_mower_ros (ROS1) to ROS2.
+  </description>
+  
+  <maintainer email="openmower@example.com">OpenMower Team</maintainer>
+  <license>BSD-3-Clause</license>
+  
+  <author email="softbank@example.com">SoftBank Corp.</author>
+  <author>Michael T. Boulet (MIT)</author>
+  <author>Clemens Elflein</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>xesc_msgs</depend>
+  <depend>xesc_interface</depend>
+  <depend>libboost-dev</depend>
+  
+  <!-- Serial communication library -->
+  <depend>libserial-dev</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

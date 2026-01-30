@@ -1,0 +1,6 @@
+# Emergency stop service
+# Used to trigger or clear emergency state
+
+uint8 emergency    # Set to 1 to trigger emergency, 0 to clear
+---
+# Response is empty

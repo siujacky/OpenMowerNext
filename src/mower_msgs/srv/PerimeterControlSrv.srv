@@ -1,0 +1,6 @@
+# Perimeter control service
+# Used to enable/disable perimeter wire sensing
+
+uint8 listenOn    # Signal to listen for (1 or 2). Other values disable sensing.
+---
+# Response is empty

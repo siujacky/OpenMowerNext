@@ -1,0 +1,7 @@
+# Service to register available actions
+# Used by nodes to register the actions they can perform
+
+string node_prefix                   # Prefix for the registering node (prevents ID collisions)
+xbot_msgs/ActionInfo[] actions       # List of available actions
+---
+# Response is empty

@@ -1,0 +1,14 @@
+# High-level control service
+# Used to send commands to the mower state machine
+
+# Command constants
+uint8 COMMAND_START = 1              # Start autonomous mowing
+uint8 COMMAND_HOME = 2               # Return to docking station
+uint8 COMMAND_S1 = 3                 # Custom command S1
+uint8 COMMAND_S2 = 4                 # Custom command S2
+uint8 COMMAND_RESET_EMERGENCY = 254  # Reset emergency state
+uint8 COMMAND_DELETE_MAPS = 255      # Delete all maps
+
+uint8 command    # Command to execute (one of the constants above)
+---
+# Response is empty

@@ -1,0 +1,7 @@
+# Mower motor control service
+# Used to control the mowing blade motor
+
+uint8 mow_enabled      # Set to 1 to enable mowing, 0 to disable
+uint8 mow_direction    # Mowing direction (0 or 1)
+---
+# Response is empty
