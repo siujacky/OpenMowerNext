@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>xbot_positioning</name>
+  <version>2.0.0</version>
+  <description>
+    XBot Positioning package for OpenMower.
+    
+    Provides sensor fusion using an Extended Kalman Filter (EKF) to combine:
+    - RTK GPS position data
+    - IMU gyroscope data
+    - Wheel encoder odometry
+    
+    Outputs fused odometry and pose estimates for navigation.
+    
+    Includes a header-only Kalman filter library (based on kalman-cpp by Markus Herb).
+    
+    Ported from open_mower_ros (ROS1) to ROS2.
+  </description>
+  
+  <maintainer email="openmower@example.com">OpenMower Team</maintainer>
+  <license>Apache-2.0</license>
+  
+  <author>Clemens Elflein</author>
+  <author>Markus Herb (kalman-cpp library)</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>xbot_msgs</depend>
+  <depend>xbot_positioning_msgs</depend>
+  <depend>eigen</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
