@@ -1,0 +1,6 @@
+# Service to add a mowing area to the map
+
+mower_map_msgs/MapArea area    # The area to add
+bool isNavigationArea          # True if this is a navigation-only area
+---
+# Response is empty

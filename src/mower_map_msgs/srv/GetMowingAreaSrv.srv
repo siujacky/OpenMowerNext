@@ -1,0 +1,5 @@
+# Service to get a mowing area by index
+
+uint32 index    # Index of the area to retrieve
+---
+mower_map_msgs/MapArea area    # The requested mowing area

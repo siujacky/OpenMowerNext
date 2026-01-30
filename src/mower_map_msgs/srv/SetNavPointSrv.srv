@@ -1,0 +1,5 @@
+# Service to set a navigation point
+
+geometry_msgs/Pose nav_pose    # Position and orientation of navigation point
+---
+# Response is empty

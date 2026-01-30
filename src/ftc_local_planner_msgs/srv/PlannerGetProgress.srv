@@ -1,0 +1,4 @@
+# Service to get the current path progress
+
+---
+uint32 index    # Current index in the path

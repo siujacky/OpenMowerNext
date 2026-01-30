@@ -1,0 +1,4 @@
+# Service to get the docking station position
+
+---
+geometry_msgs/Pose docking_pose    # Position and orientation of docking station

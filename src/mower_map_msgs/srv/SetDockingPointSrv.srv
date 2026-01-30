@@ -1,0 +1,5 @@
+# Service to set the docking station position
+
+geometry_msgs/Pose docking_pose    # New position and orientation of docking station
+---
+# Response is empty

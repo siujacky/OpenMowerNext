@@ -1,0 +1,5 @@
+# Service to enable/disable GPS for positioning
+
+uint8 gps_enabled    # Set to 1 to enable GPS, 0 to disable
+---
+# Response is empty

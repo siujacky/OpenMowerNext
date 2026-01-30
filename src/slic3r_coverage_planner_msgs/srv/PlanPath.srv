@@ -1,0 +1,22 @@
+# Service to plan coverage paths for an area
+
+# Fill type constants
+uint8 FILL_LINEAR = 0        # Linear/stripe fill pattern
+uint8 FILL_CONCENTRIC = 1    # Concentric fill pattern
+
+# Request parameters
+uint8 fill_type              # Fill pattern type
+float64 angle                # Fill angle [rad]
+float64 distance             # Distance between passes [m]
+float64 outer_offset         # Offset from outer boundary [m]
+uint8 outline_count          # Number of outline passes
+uint8 outline_overlap_count  # Overlap between outline passes
+bool skip_area_outline       # Skip the area outline
+bool skip_obstacle_outlines  # Skip obstacle outlines
+bool skip_fill               # Skip the fill pattern
+
+geometry_msgs/Polygon outline       # Outer boundary
+geometry_msgs/Polygon[] holes       # Obstacles/holes in the area
+
+---
+slic3r_coverage_planner_msgs/Path[] paths    # Generated coverage paths
