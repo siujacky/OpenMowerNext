@@ -45,7 +45,7 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           rosdep update
           make custom-deps || true
-          rosdep install --from-paths src -y -r --ignore-src || true
+          rosdep install --from-paths . src -y -r --ignore-src
 
       - name: Build
         shell: bash
