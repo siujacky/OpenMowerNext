@@ -9,12 +9,14 @@ on:
       - 'src/**/*.h'
       - '.clang-format'
       - '.clang-tidy'
+      - '.github/workflows/lint.yml'
   push:
     branches: [main]
     paths:
       - 'src/**/*.cpp'
       - 'src/**/*.hpp'
       - 'src/**/*.h'
+      - '.github/workflows/lint.yml'
   workflow_dispatch:
 
 jobs:
