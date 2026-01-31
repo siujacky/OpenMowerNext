@@ -1,0 +1,16 @@
+[submodule "src/lib/micro_ros_agent"]
+	path = src/lib/micro_ros_agent
+	url = https://github.com/micro-ROS/micro-ROS-Agent
+	branch = jazzy
+[submodule "src/lib/vesc"]
+	path = src/lib/vesc
+	url = https://github.com/sbgisen/vesc.git
+	branch = jazzy-devel
+[submodule "src/lib/ublox_f9p"]
+	path = src/lib/ublox_f9p
+	url = https://github.com/jkaflik/ublox_f9p
+	branch = main
+[submodule "src/lib/ntrip_client"]
+	path = src/lib/ntrip_client
+	url = https://github.com/LORD-MicroStrain/ntrip_client
+	branch = ros2
