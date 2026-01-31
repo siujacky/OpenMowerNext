@@ -1,12 +1,9 @@
-/**
- * @file xbot_positioning_core.cpp
- * @brief Core Kalman filter positioning implementation
- * 
- * Copyright (c) 2022 Clemens Elflein. All rights reserved.
- * Ported from open_mower_ros (ROS1) to ROS2.
- */
+//
+// Created by Clemens Elflein on 27.10.22.
+// Copyright (c) 2022 Clemens Elflein. All rights reserved.
+//
 
-#include "xbot_positioning/xbot_positioning_core.hpp"
+#include "xbot_positioning_core.h"
 
 
 const xbot::positioning::StateT &xbot::positioning::xbot_positioning_core::predict(double vx, double vr, double dt) {

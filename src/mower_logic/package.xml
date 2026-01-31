@@ -1,32 +1,31 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>xbot_positioning</name>
-  <version>0.1.0</version>
-  <description>
-    ROS2 positioning node with Extended Kalman Filter sensor fusion.
-    Fuses GPS, IMU, and wheel odometry for accurate robot localization.
-    Ported from open_mower_ros (ROS1) for OpenMowerNext.
-  </description>
-  <maintainer email="openmower@openmower.org">OpenMower Team</maintainer>
-  <license>BSD-3-Clause</license>
-
-  <author email="clemens@2040.io">Clemens Elflein</author>
-  <author>Markus Herb (kalman library)</author>
+  <name>mower_logic</name>
+  <version>2.0.0</version>
+  <description>Mower state machine and behavior logic - ROS2 port</description>
+  <maintainer email="clemens.elflein@googlemail.com">Clemens Elflein</maintainer>
+  <license>GPL-3.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
-  <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>nav2_msgs</depend>
+  <depend>visualization_msgs</depend>
   <depend>tf2</depend>
-  <depend>tf2_ros</depend>
   <depend>tf2_geometry_msgs</depend>
+  <depend>mower_msgs</depend>
   <depend>xbot_msgs</depend>
   <depend>xbot_positioning_msgs</depend>
-  <depend>eigen</depend>
+  <depend>mower_logic_msgs</depend>
+  <depend>mower_map_msgs</depend>
+  <depend>slic3r_coverage_planner_msgs</depend>
+  <depend>ftc_local_planner_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

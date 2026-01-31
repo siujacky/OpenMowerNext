@@ -1,0 +1,8 @@
+<library path="ftc_planner">
+  <class name="ftc_local_planner/FTCPlanner" type="ftc_local_planner::FTCPlanner" base_class_type="nav2_core::Controller">
+    <description>
+      Follow-The-Carrot local planner for Nav2. A simple path following controller
+      that uses PID control to follow a global path with adaptive speed control.
+    </description>
+  </class>
+</library>
