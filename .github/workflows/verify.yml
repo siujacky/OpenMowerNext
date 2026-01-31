@@ -45,7 +45,8 @@ jobs:
           source /opt/ros/jazzy/setup.bash
           rosdep update
           make custom-deps || true
-          rosdep install --from-paths . src -y -r --ignore-src
+          # Skip lib directory to avoid duplicate package names from submodules
+          rosdep install --from-paths . --skip-keys="vesc_driver vesc_msgs" -y -r --ignore-src || true
 
       - name: Build
         shell: bash
