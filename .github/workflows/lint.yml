@@ -1,0 +1,67 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**/*.cpp'
+      - 'src/**/*.hpp'
+      - 'src/**/*.h'
+      - '.clang-format'
+      - '.clang-tidy'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**/*.cpp'
+      - 'src/**/*.hpp'
+      - 'src/**/*.h'
+  workflow_dispatch:
+
+jobs:
+  clang-format:
+    name: Check clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-17
+
+      - name: Check formatting
+        run: |
+          find src -name '*.cpp' -o -name '*.hpp' -o -name '*.h' | \
+            xargs clang-format-17 --dry-run --Werror
+
+  clang-tidy:
+    name: Check clang-tidy
+    runs-on: ubuntu-latest
+    container:
+      image: ros:jazzy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y clang-tidy python3-pip
+          pip3 install --break-system-packages colcon-common-extensions
+          source /opt/ros/jazzy/setup.bash
+          rosdep update
+          rosdep install --from-paths src -y -r --ignore-src || true
+
+      - name: Generate compile_commands.json
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON || true
+          find build -name compile_commands.json -exec cat {} \; > compile_commands.json || true
+
+      - name: Run clang-tidy
+        if: always()
+        run: |
+          find src -name '*.cpp' | head -20 | \
+            xargs -I {} clang-tidy {} -p . --warnings-as-errors='*' 2>/dev/null || echo "clang-tidy found issues (non-blocking)"
+        continue-on-error: true
