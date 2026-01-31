@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install system dependencies
         run: |
@@ -27,7 +29,8 @@ jobs:
           apt-get install -y \
             python3-pip \
             python3-colcon-common-extensions \
-            git
+            git \
+            nlohmann-json3-dev
 
       - name: Cache rosdep
         uses: actions/cache@v4
