@@ -17,6 +17,7 @@ COPY utils/install-custom-deps.sh $WORKSPACE/utils/
 # Install dependencies
 RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
     && apt-get update \
+    && apt-get install -y libgeographic-dev \
     && rosdep update \
     && make custom-deps deps \
     && apt-get clean \
