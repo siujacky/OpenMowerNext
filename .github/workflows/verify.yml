@@ -37,6 +37,7 @@ jobs:
           restore-keys: rosdep-jazzy-
 
       - name: Install ROS dependencies
+        shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
           rosdep update
@@ -44,11 +45,13 @@ jobs:
           rosdep install --from-paths src -y -r --ignore-src || true
 
       - name: Build
+        shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
           colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
       - name: Run tests
+        shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
           source install/setup.bash
@@ -56,6 +59,7 @@ jobs:
 
       - name: Test results
         if: always()
+        shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
           colcon test-result --verbose || true
