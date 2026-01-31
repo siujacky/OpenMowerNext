@@ -1,9 +1,9 @@
 /**
  * @file vesc_packet_factory.hpp
  * @brief VESC Packet Factory - Creates packets from raw serial data
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
- * 
+ *
  * Copyright (c) 2019, SoftBank Corp.
  * All rights reserved.
  *
@@ -59,7 +59,7 @@ namespace vesc_driver
 /**
  * @class VescPacketFactory
  * @brief Creates VESC packets from raw serial data
- * 
+ *
  * This is a static factory class that parses raw bytes from the serial
  * interface and constructs the appropriate VescPacket subclass.
  */
@@ -67,25 +67,22 @@ class VescPacketFactory
 {
 public:
   // Delete copy/move operations (singleton pattern)
-  VescPacketFactory(const VescPacketFactory &) = delete;
-  VescPacketFactory & operator=(const VescPacketFactory &) = delete;
-  VescPacketFactory(VescPacketFactory &&) = delete;
-  VescPacketFactory & operator=(VescPacketFactory &&) = delete;
+  VescPacketFactory(const VescPacketFactory&) = delete;
+  VescPacketFactory& operator=(const VescPacketFactory&) = delete;
+  VescPacketFactory(VescPacketFactory&&) = delete;
+  VescPacketFactory& operator=(VescPacketFactory&&) = delete;
 
   /**
    * @brief Creates a VescPacket from a buffer
-   * 
+   *
    * @param begin Iterator to buffer at the start-of-frame character
    * @param end Iterator to the buffer past-the-end element
    * @param num_bytes_needed[out] Number of bytes needed to complete the frame (if incomplete)
    * @param what[out] Message string giving a reason why the packet was not found
    * @return Pointer to a valid VescPacket if successful; otherwise nullptr
    */
-  static VescPacketPtr createPacket(
-    const Buffer::const_iterator & begin,
-    const Buffer::const_iterator & end,
-    int * num_bytes_needed,
-    std::string * what);
+  static VescPacketPtr createPacket(const Buffer::const_iterator& begin, const Buffer::const_iterator& end,
+                                    int* num_bytes_needed, std::string* what);
 
   /**
    * @brief Function type for creating packet instances
@@ -106,29 +103,29 @@ private:
    * @brief Get the singleton factory map (construct on first use)
    * @return Pointer to the factory map
    */
-  static FactoryMap * getMap();
+  static FactoryMap* getMap();
 };
 
 /**
  * @def REGISTER_PACKET_TYPE
  * @brief Macro to register a packet type with the factory
- * 
+ *
  * This macro creates a static factory class that registers itself
  * with VescPacketFactory at static initialization time.
  */
-#define REGISTER_PACKET_TYPE(id, klass) \
-  class klass##Factory \
-  { \
-public: \
-    klass##Factory() \
-    { \
-      VescPacketFactory::registerPacketType((id), &klass##Factory::create); \
-    } \
-    static VescPacketPtr create(std::shared_ptr<VescFrame> frame) \
-    { \
-      return std::make_shared<klass>(frame); \
-    } \
-  }; \
+#define REGISTER_PACKET_TYPE(id, klass)                                                                                \
+  class klass##Factory                                                                                                 \
+  {                                                                                                                    \
+  public:                                                                                                              \
+    klass##Factory()                                                                                                   \
+    {                                                                                                                  \
+      VescPacketFactory::registerPacketType((id), &klass##Factory::create);                                            \
+    }                                                                                                                  \
+    static VescPacketPtr create(std::shared_ptr<VescFrame> frame)                                                      \
+    {                                                                                                                  \
+      return std::make_shared<klass>(frame);                                                                           \
+    }                                                                                                                  \
+  };                                                                                                                   \
   static klass##Factory global_##klass##Factory;
 
 }  // namespace vesc_driver

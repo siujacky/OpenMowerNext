@@ -1,9 +1,9 @@
 /**
  * @file vesc_interface.hpp
  * @brief VESC Serial Interface - Communicates with VESC motor controllers over serial
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
- * 
+ *
  * Copyright (c) 2019, SoftBank Corp.
  * All rights reserved.
  *
@@ -80,19 +80,19 @@ struct VescStatusStruct
   uint8_t fw_version_major = 0;
   uint8_t fw_version_minor = 0;
   VescConnectionState connection_state = VescConnectionState::DISCONNECTED;
-  double voltage_input = 0.0;        ///< Input voltage (volt)
-  double temperature_pcb = 0.0;      ///< Temperature of PCB (degrees Celsius)
-  double temperature_motor = 0.0;    ///< Temperature of motor (degrees Celsius)
-  double current_motor = 0.0;        ///< Motor current (ampere)
-  double current_input = 0.0;        ///< Input current (ampere)
-  double speed_erpm = 0.0;           ///< Motor velocity (electrical RPM)
-  double duty_cycle = 0.0;           ///< Duty cycle (0 to 1)
-  double charge_drawn = 0.0;         ///< Electric charge drawn from input (ampere-hour)
-  double charge_regen = 0.0;         ///< Electric charge regenerated to input (ampere-hour)
-  double energy_drawn = 0.0;         ///< Energy drawn from input (watt-hour)
-  double energy_regen = 0.0;         ///< Energy regenerated to input (watt-hour)
-  double displacement = 0.0;         ///< Net tachometer (counts)
-  double distance_traveled = 0.0;    ///< Total tachometer (counts)
+  double voltage_input = 0.0;      ///< Input voltage (volt)
+  double temperature_pcb = 0.0;    ///< Temperature of PCB (degrees Celsius)
+  double temperature_motor = 0.0;  ///< Temperature of motor (degrees Celsius)
+  double current_motor = 0.0;      ///< Motor current (ampere)
+  double current_input = 0.0;      ///< Input current (ampere)
+  double speed_erpm = 0.0;         ///< Motor velocity (electrical RPM)
+  double duty_cycle = 0.0;         ///< Duty cycle (0 to 1)
+  double charge_drawn = 0.0;       ///< Electric charge drawn from input (ampere-hour)
+  double charge_regen = 0.0;       ///< Electric charge regenerated to input (ampere-hour)
+  double energy_drawn = 0.0;       ///< Energy drawn from input (watt-hour)
+  double energy_regen = 0.0;       ///< Energy regenerated to input (watt-hour)
+  double displacement = 0.0;       ///< Net tachometer (counts)
+  double distance_traveled = 0.0;  ///< Total tachometer (counts)
   uint32_t tacho = 0;
   uint32_t tacho_absolute = 0;
   bool direction = false;
@@ -102,7 +102,7 @@ struct VescStatusStruct
 /**
  * @class VescInterface
  * @brief Class providing an interface to the Vedder VESC motor controller via serial port
- * 
+ *
  * This class manages the serial connection to a VESC motor controller,
  * handles packet parsing, and provides methods to send commands and
  * receive status updates.
@@ -113,22 +113,20 @@ public:
   /**
    * @brief Error handler function type
    */
-  using ErrorHandlerFunction = std::function<void(const std::string &)>;
+  using ErrorHandlerFunction = std::function<void(const std::string&)>;
 
   // Delete copy/move operations (non-copyable due to threads/mutexes)
-  VescInterface(const VescInterface &) = delete;
-  VescInterface & operator=(const VescInterface &) = delete;
-  VescInterface(VescInterface &&) = delete;
-  VescInterface & operator=(VescInterface &&) = delete;
+  VescInterface(const VescInterface&) = delete;
+  VescInterface& operator=(const VescInterface&) = delete;
+  VescInterface(VescInterface&&) = delete;
+  VescInterface& operator=(VescInterface&&) = delete;
 
   /**
    * @brief Constructs a VescInterface object
    * @param error_handler Callback function for error messages
    * @param state_request_millis Interval between state requests in milliseconds
    */
-  explicit VescInterface(
-    const ErrorHandlerFunction & error_handler,
-    uint32_t state_request_millis = 20);
+  explicit VescInterface(const ErrorHandlerFunction& error_handler, uint32_t state_request_millis = 20);
 
   /**
    * @brief Destructor - stops threads and closes connection
@@ -169,7 +167,7 @@ public:
    * @brief Start the interface and connect to the specified port
    * @param port Serial port path (e.g., "/dev/ttyUSB0")
    */
-  void start(const std::string & port);
+  void start(const std::string& port);
 
   /**
    * @brief Stop the interface and close the connection
@@ -180,13 +178,13 @@ public:
    * @brief Get the current status (non-blocking)
    * @param[out] status Pointer to status structure to fill
    */
-  void getStatus(VescStatusStruct * status);
+  void getStatus(VescStatusStruct* status);
 
   /**
    * @brief Wait for and get a new status update (blocking)
    * @param[out] status Pointer to status structure to fill
    */
-  void waitForStatus(VescStatusStruct * status);
+  void waitForStatus(VescStatusStruct* status);
 
   /**
    * @brief Request firmware version from VESC
@@ -204,7 +202,7 @@ private:
    * @param packet The packet to send
    * @return true if successful, false otherwise
    */
-  bool send(const VescPacket & packet);
+  bool send(const VescPacket& packet);
 
   /**
    * @brief RX thread function - reads and parses incoming data
@@ -225,8 +223,8 @@ private:
   // Thread handles
   std::thread rx_thread_;
   std::thread update_thread_;
-  std::atomic<bool> rx_thread_run_{false};
-  std::atomic<bool> update_thread_run_{false};
+  std::atomic<bool> rx_thread_run_{ false };
+  std::atomic<bool> update_thread_run_{ false };
 
   // Callback and serial interface
   ErrorHandlerFunction error_handler_;

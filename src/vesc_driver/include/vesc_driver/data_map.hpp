@@ -1,7 +1,7 @@
 /**
  * @file data_map.hpp
  * @brief VESC Communication command IDs and packet data maps
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
  * Original copyright: SoftBank Corp. (Apache 2.0)
  */

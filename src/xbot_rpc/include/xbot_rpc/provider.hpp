@@ -1,7 +1,7 @@
 /**
  * @file provider.hpp
  * @brief RPC Provider class for ROS2
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
  */
 
@@ -23,15 +23,16 @@
 
 #include "xbot_rpc/constants.hpp"
 
-#define RPC_METHOD(id, body) \
-  { id, [](const std::string& method, const nlohmann::basic_json<>& params) body }
+#define RPC_METHOD(id, body)                                                                                           \
+  {                                                                                                                    \
+    id, [](const std::string& method, const nlohmann::basic_json<>& params) body                                       \
+  }
 
 namespace xbot_rpc
 {
 
-using callback_t = std::function<nlohmann::basic_json<>(
-    const std::string & method,
-    const nlohmann::basic_json<> & params)>;
+using callback_t =
+    std::function<nlohmann::basic_json<>(const std::string& method, const nlohmann::basic_json<>& params)>;
 
 /**
  * @brief Exception thrown by RPC methods
@@ -42,12 +43,11 @@ public:
   const int16_t code;
   const std::string message;
 
-  RpcException(int16_t code, const std::string & message)
-  : code(code), message(message)
+  RpcException(int16_t code, const std::string& message) : code(code), message(message)
   {
   }
 
-  const char * what() const noexcept override
+  const char* what() const noexcept override
   {
     return message.c_str();
   }
@@ -64,10 +64,8 @@ public:
    * @param node_id Unique identifier for this node
    * @param methods Initial map of method handlers
    */
-  explicit RpcProvider(
-    const std::string & node_id,
-    const std::map<std::string, callback_t> & methods = {})
-  : node_id_(node_id), methods_(methods)
+  explicit RpcProvider(const std::string& node_id, const std::map<std::string, callback_t>& methods = {})
+    : node_id_(node_id), methods_(methods)
   {
   }
 
@@ -82,7 +80,7 @@ public:
    * @param id Method identifier
    * @param callback Handler function
    */
-  void addMethod(const std::string & id, callback_t callback)
+  void addMethod(const std::string& id, callback_t callback)
   {
     methods_.emplace(id, callback);
   }
@@ -91,7 +89,7 @@ public:
    * @brief Add a method handler
    * @param method Pair of method ID and callback
    */
-  void addMethod(const std::pair<std::string, callback_t> & method)
+  void addMethod(const std::pair<std::string, callback_t>& method)
   {
     methods_.insert(method);
   }
@@ -103,13 +101,8 @@ public:
 
 private:
   void handleRequest(const xbot_rpc_msgs::msg::RpcRequest::SharedPtr request);
-  void publishResponse(
-    const xbot_rpc_msgs::msg::RpcRequest::SharedPtr request,
-    const nlohmann::basic_json<> & response);
-  void publishError(
-    const xbot_rpc_msgs::msg::RpcRequest::SharedPtr request,
-    int16_t code,
-    const std::string & message);
+  void publishResponse(const xbot_rpc_msgs::msg::RpcRequest::SharedPtr request, const nlohmann::basic_json<>& response);
+  void publishError(const xbot_rpc_msgs::msg::RpcRequest::SharedPtr request, int16_t code, const std::string& message);
 
   std::string node_id_;
   std::map<std::string, callback_t> methods_;

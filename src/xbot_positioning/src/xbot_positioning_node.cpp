@@ -1,10 +1,10 @@
 /**
  * @file xbot_positioning_node.cpp
  * @brief ROS2 positioning node with Extended Kalman Filter sensor fusion
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
  * Original author: Clemens Elflein
- * 
+ *
  * Changes from ROS1:
  * - ros::NodeHandle → rclcpp::Node
  * - ROS_* macros → RCLCPP_* macros
@@ -45,9 +45,7 @@ using std::placeholders::_2;
 class XbotPositioningNode : public rclcpp::Node
 {
 public:
-  XbotPositioningNode()
-  : Node("xbot_positioning"),
-    tf_broadcaster_(this)
+  XbotPositioningNode() : Node("xbot_positioning"), tf_broadcaster_(this)
   {
     // Initialize state
     has_gps_ = false;
@@ -76,42 +74,41 @@ public:
 
     RCLCPP_INFO(this->get_logger(), "Antenna offset: %f, %f", antenna_offset_x_, antenna_offset_y_);
 
-    if (gyro_offset_ != 0.0 && skip_gyro_calibration_) {
+    if (gyro_offset_ != 0.0 && skip_gyro_calibration_)
+    {
       RCLCPP_WARN(this->get_logger(), "Using gyro offset of: %f", gyro_offset_);
     }
 
     // Create services
     gps_service_ = this->create_service<xbot_positioning_msgs::srv::GPSControlSrv>(
-      "xbot_positioning/set_gps_state",
-      std::bind(&XbotPositioningNode::setGpsState, this, _1, _2));
-    
+        "xbot_positioning/set_gps_state", std::bind(&XbotPositioningNode::setGpsState, this, _1, _2));
+
     pose_service_ = this->create_service<xbot_positioning_msgs::srv::SetPoseSrv>(
-      "xbot_positioning/set_robot_pose",
-      std::bind(&XbotPositioningNode::setPose, this, _1, _2));
+        "xbot_positioning/set_robot_pose", std::bind(&XbotPositioningNode::setPose, this, _1, _2));
 
     // Create publishers
     odometry_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom_out", 50);
     xbot_absolute_pose_pub_ = this->create_publisher<xbot_msgs::msg::AbsolutePose>("xb_pose_out", 50);
-    
-    if (publish_debug_) {
-      dbg_expected_motion_vector_pub_ = this->create_publisher<geometry_msgs::msg::Vector3>(
-        "debug_expected_motion_vector", 50);
-      kalman_state_pub_ = this->create_publisher<xbot_positioning_msgs::msg::KalmanState>(
-        "kalman_state", 50);
+
+    if (publish_debug_)
+    {
+      dbg_expected_motion_vector_pub_ =
+          this->create_publisher<geometry_msgs::msg::Vector3>("debug_expected_motion_vector", 50);
+      kalman_state_pub_ = this->create_publisher<xbot_positioning_msgs::msg::KalmanState>("kalman_state", 50);
     }
 
     // Create subscriptions
-    imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-      "imu_in", 10, std::bind(&XbotPositioningNode::onImu, this, _1));
-    
+    imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>("imu_in", 10,
+                                                                std::bind(&XbotPositioningNode::onImu, this, _1));
+
     twist_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-      "twist_in", 10, std::bind(&XbotPositioningNode::onTwistIn, this, _1));
-    
+        "twist_in", 10, std::bind(&XbotPositioningNode::onTwistIn, this, _1));
+
     pose_sub_ = this->create_subscription<xbot_msgs::msg::AbsolutePose>(
-      "xb_pose_in", 10, std::bind(&XbotPositioningNode::onPose, this, _1));
-    
+        "xb_pose_in", 10, std::bind(&XbotPositioningNode::onPose, this, _1));
+
     wheel_tick_sub_ = this->create_subscription<xbot_msgs::msg::WheelTick>(
-      "wheel_ticks_in", 10, std::bind(&XbotPositioningNode::onWheelTicks, this, _1));
+        "wheel_ticks_in", 10, std::bind(&XbotPositioningNode::onWheelTicks, this, _1));
 
     RCLCPP_INFO(this->get_logger(), "xbot_positioning node initialized");
   }
@@ -119,30 +116,39 @@ public:
 private:
   void onImu(const sensor_msgs::msg::Imu::SharedPtr msg)
   {
-    if (!has_gyro_) {
-      if (!skip_gyro_calibration_) {
-        if (gyro_offset_samples_ == 0) {
+    if (!has_gyro_)
+    {
+      if (!skip_gyro_calibration_)
+      {
+        if (gyro_offset_samples_ == 0)
+        {
           RCLCPP_INFO(this->get_logger(), "Started gyro calibration");
           gyro_calibration_start_ = msg->header.stamp;
           gyro_offset_ = 0;
         }
         gyro_offset_ += msg->angular_velocity.z;
         gyro_offset_samples_++;
-        
+
         double elapsed = (rclcpp::Time(msg->header.stamp) - rclcpp::Time(gyro_calibration_start_)).seconds();
-        if (elapsed < 5.0) {
+        if (elapsed < 5.0)
+        {
           last_imu_ = *msg;
           return;
         }
         has_gyro_ = true;
-        if (gyro_offset_samples_ > 0) {
+        if (gyro_offset_samples_ > 0)
+        {
           gyro_offset_ /= gyro_offset_samples_;
-        } else {
+        }
+        else
+        {
           gyro_offset_ = 0;
         }
         gyro_offset_samples_ = 0;
         RCLCPP_INFO(this->get_logger(), "Calibrated gyro offset: %f", gyro_offset_);
-      } else {
+      }
+      else
+      {
         RCLCPP_WARN(this->get_logger(), "Skipped gyro calibration");
         has_gyro_ = true;
         return;
@@ -161,7 +167,7 @@ private:
     odometry.pose.pose.position.x = x.x_pos();
     odometry.pose.pose.position.y = x.y_pos();
     odometry.pose.pose.position.z = 0;
-    
+
     tf2::Quaternion q;
     q.setRPY(0.0, 0.0, x.theta());
     odometry.pose.pose.orientation = tf2::toMsg(q);
@@ -177,7 +183,8 @@ private:
     tf_broadcaster_.sendTransform(odom_trans);
 
     // Publish debug state
-    if (publish_debug_) {
+    if (publish_debug_)
+    {
       auto state = core_.getState();
       xbot_positioning_msgs::msg::KalmanState state_msg;
       state_msg.x = state.x_pos();
@@ -199,20 +206,26 @@ private:
     xb_pose_msg.flags = xbot_msgs::msg::AbsolutePose::FLAG_SENSOR_FUSION_DEAD_RECKONING;
     xb_pose_msg.orientation_valid = true;
     xb_pose_msg.motion_vector_valid = false;
-    
-    if (has_gps_) {
+
+    if (has_gps_)
+    {
       xb_pose_msg.position_accuracy = last_gps_.position_accuracy;
-    } else {
+    }
+    else
+    {
       xb_pose_msg.position_accuracy = 999;
     }
-    
+
     double time_since_gps = (this->now() - last_gps_time_).seconds();
-    if (time_since_gps < 10.0) {
+    if (time_since_gps < 10.0)
+    {
       xb_pose_msg.flags |= xbot_msgs::msg::AbsolutePose::FLAG_SENSOR_FUSION_RECENT_ABSOLUTE_POSE;
-    } else {
+    }
+    else
+    {
       xb_pose_msg.position_accuracy = 999;
     }
-    
+
     xb_pose_msg.orientation_accuracy = 0.01;
     xb_pose_msg.pose = odometry.pose;
     xb_pose_msg.vehicle_heading = x.theta();
@@ -225,12 +238,13 @@ private:
 
   void onWheelTicks(const xbot_msgs::msg::WheelTick::SharedPtr msg)
   {
-    if (!has_ticks_) {
+    if (!has_ticks_)
+    {
       last_ticks_ = *msg;
       has_ticks_ = true;
       return;
     }
-    
+
     double dt = (rclcpp::Time(msg->stamp) - rclcpp::Time(last_ticks_.stamp)).seconds();
 
     double d_wheel_l = static_cast<double>(msg->wheel_ticks_rl - last_ticks_.wheel_ticks_rl) *
@@ -238,10 +252,12 @@ private:
     double d_wheel_r = static_cast<double>(msg->wheel_ticks_rr - last_ticks_.wheel_ticks_rr) *
                        (1.0 / static_cast<double>(msg->wheel_tick_factor));
 
-    if (msg->wheel_direction_rl) {
+    if (msg->wheel_direction_rl)
+    {
       d_wheel_l *= -1.0;
     }
-    if (msg->wheel_direction_rr) {
+    if (msg->wheel_direction_rr)
+    {
       d_wheel_r *= -1.0;
     }
 
@@ -258,27 +274,31 @@ private:
 
   void onPose(const xbot_msgs::msg::AbsolutePose::SharedPtr msg)
   {
-    if (!gps_enabled_) {
-      RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 
-        gps_message_throttle_ * 1000, "dropping GPS update, since gps_enabled = false.");
-      return;
-    }
-    
-    if ((msg->flags & xbot_msgs::msg::AbsolutePose::FLAG_GPS_RTK_FIXED) == 0) {
-      RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-        "Dropped GPS update, since it's not RTK Fixed");
+    if (!gps_enabled_)
+    {
+      RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), gps_message_throttle_ * 1000,
+                           "dropping GPS update, since gps_enabled = false.");
       return;
     }
 
-    if (msg->position_accuracy > max_gps_accuracy_) {
+    if ((msg->flags & xbot_msgs::msg::AbsolutePose::FLAG_GPS_RTK_FIXED) == 0)
+    {
       RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
-        "Dropped GPS update, since it's not accurate enough. Accuracy was: %f, limit is: %f",
-        msg->position_accuracy, max_gps_accuracy_);
+                           "Dropped GPS update, since it's not RTK Fixed");
+      return;
+    }
+
+    if (msg->position_accuracy > max_gps_accuracy_)
+    {
+      RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+                           "Dropped GPS update, since it's not accurate enough. Accuracy was: %f, limit is: %f",
+                           msg->position_accuracy, max_gps_accuracy_);
       return;
     }
 
     double time_since_last_gps = (this->now() - last_gps_time_).seconds();
-    if (time_since_last_gps > 5.0) {
+    if (time_since_last_gps > 5.0)
+    {
       RCLCPP_WARN(this->get_logger(), "Last GPS was %f seconds ago.", time_since_last_gps);
       has_gps_ = false;
       valid_gps_samples_ = 0;
@@ -294,40 +314,49 @@ private:
 
     double distance_to_last_gps = (last_gps_pos - gps_pos).length();
 
-    if (distance_to_last_gps < 5.0) {
+    if (distance_to_last_gps < 5.0)
+    {
       // Inlier
       last_gps_ = *msg;
       last_gps_time_ = this->now();
       gps_outlier_count_ = 0;
       valid_gps_samples_++;
 
-      if (!has_gps_ && valid_gps_samples_ > 10) {
+      if (!has_gps_ && valid_gps_samples_ > 10)
+      {
         RCLCPP_INFO(this->get_logger(), "GPS data now valid");
-        RCLCPP_INFO(this->get_logger(), "First GPS data, moving kalman filter to %f, %f",
-          msg->pose.pose.position.x, msg->pose.pose.position.y);
+        RCLCPP_INFO(this->get_logger(), "First GPS data, moving kalman filter to %f, %f", msg->pose.pose.position.x,
+                    msg->pose.pose.position.y);
         core_.updatePosition(msg->pose.pose.position.x, msg->pose.pose.position.y, 0.001);
         has_gps_ = true;
-      } else if (has_gps_) {
+      }
+      else if (has_gps_)
+      {
         core_.updatePosition(msg->pose.pose.position.x, msg->pose.pose.position.y, 500.0);
-        
-        if (publish_debug_) {
+
+        if (publish_debug_)
+        {
           auto m = core_.om2.h(core_.ekf.getState());
           geometry_msgs::msg::Vector3 dbg;
           dbg.x = m.vx();
           dbg.y = m.vy();
           dbg_expected_motion_vector_pub_->publish(dbg);
         }
-        
+
         double speed = std::sqrt(std::pow(msg->motion_vector.x, 2) + std::pow(msg->motion_vector.y, 2));
-        if (speed >= min_speed_) {
+        if (speed >= min_speed_)
+        {
           core_.updateOrientation2(msg->motion_vector.x, msg->motion_vector.y, 10000.0);
         }
       }
-    } else {
+    }
+    else
+    {
       RCLCPP_WARN(this->get_logger(), "GPS outlier found. Distance was: %f", distance_to_last_gps);
       gps_outlier_count_++;
-      
-      if (gps_outlier_count_ > 10) {
+
+      if (gps_outlier_count_ > 10)
+      {
         RCLCPP_ERROR(this->get_logger(), "too many outliers, assuming that the current gps value is valid.");
         last_gps_ = *msg;
         last_gps_time_ = this->now();
@@ -338,27 +367,25 @@ private:
     }
   }
 
-  void setGpsState(
-    const std::shared_ptr<xbot_positioning_msgs::srv::GPSControlSrv::Request> request,
-    std::shared_ptr<xbot_positioning_msgs::srv::GPSControlSrv::Response> /*response*/)
+  void setGpsState(const std::shared_ptr<xbot_positioning_msgs::srv::GPSControlSrv::Request> request,
+                   std::shared_ptr<xbot_positioning_msgs::srv::GPSControlSrv::Response> /*response*/)
   {
     gps_enabled_ = request->gps_enabled;
     RCLCPP_INFO(this->get_logger(), "GPS enabled: %s", gps_enabled_ ? "true" : "false");
   }
 
-  void setPose(
-    const std::shared_ptr<xbot_positioning_msgs::srv::SetPoseSrv::Request> request,
-    std::shared_ptr<xbot_positioning_msgs::srv::SetPoseSrv::Response> /*response*/)
+  void setPose(const std::shared_ptr<xbot_positioning_msgs::srv::SetPoseSrv::Request> request,
+               std::shared_ptr<xbot_positioning_msgs::srv::SetPoseSrv::Response> /*response*/)
   {
     tf2::Quaternion q;
     tf2::fromMsg(request->robot_pose.orientation, q);
     tf2::Matrix3x3 m(q);
     double unused1, unused2, yaw;
     m.getRPY(unused1, unused2, yaw);
-    
+
     core_.setState(request->robot_pose.position.x, request->robot_pose.position.y, yaw, 0, 0);
-    RCLCPP_INFO(this->get_logger(), "Robot pose set to: x=%f, y=%f, yaw=%f",
-      request->robot_pose.position.x, request->robot_pose.position.y, yaw);
+    RCLCPP_INFO(this->get_logger(), "Robot pose set to: x=%f, y=%f, yaw=%f", request->robot_pose.position.x,
+                request->robot_pose.position.y, yaw);
   }
 
   // Kalman filter core
@@ -405,11 +432,11 @@ private:
   double vx_;
   int gps_outlier_count_;
   int valid_gps_samples_;
-  rclcpp::Time last_gps_time_{0, 0, RCL_ROS_TIME};
+  rclcpp::Time last_gps_time_{ 0, 0, RCL_ROS_TIME };
   bool gps_enabled_;
 };
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<XbotPositioningNode>());

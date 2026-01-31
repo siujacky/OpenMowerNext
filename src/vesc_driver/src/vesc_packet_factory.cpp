@@ -1,9 +1,9 @@
 /**
  * @file vesc_packet_factory.cpp
  * @brief VESC Packet Factory implementation
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
- * 
+ *
  * Copyright (c) 2019, SoftBank Corp.
  * All rights reserved.
  *
@@ -49,61 +49,57 @@ namespace
  * @param bytes_needed Number of bytes needed (default 0)
  * @return Empty VescPacketPtr
  */
-VescPacketPtr createFailed(
-  int * num_bytes_needed,
-  std::string * what,
-  const std::string & message,
-  int bytes_needed = 0)
+VescPacketPtr createFailed(int* num_bytes_needed, std::string* what, const std::string& message, int bytes_needed = 0)
 {
-  if (num_bytes_needed != nullptr) {
+  if (num_bytes_needed != nullptr)
+  {
     *num_bytes_needed = bytes_needed;
   }
-  if (what != nullptr) {
+  if (what != nullptr)
+  {
     *what = message;
   }
   return VescPacketPtr();
 }
 }  // namespace
 
-VescPacketPtr VescPacketFactory::createPacket(
-  const Buffer::const_iterator & begin,
-  const Buffer::const_iterator & end,
-  int * num_bytes_needed,
-  std::string * what)
+VescPacketPtr VescPacketFactory::createPacket(const Buffer::const_iterator& begin, const Buffer::const_iterator& end,
+                                              int* num_bytes_needed, std::string* what)
 {
   // Initialize output variables
-  if (num_bytes_needed != nullptr) {
+  if (num_bytes_needed != nullptr)
+  {
     *num_bytes_needed = 0;
   }
-  if (what != nullptr) {
+  if (what != nullptr)
+  {
     what->clear();
   }
 
   // Requires at least VESC_MIN_FRAME_SIZE bytes in buffer
   const int buffer_size = static_cast<int>(std::distance(begin, end));
-  if (buffer_size < VescFrame::VESC_MIN_FRAME_SIZE) {
-    return createFailed(
-      num_bytes_needed, what,
-      "Buffer does not contain a complete frame",
-      VescFrame::VESC_MIN_FRAME_SIZE - buffer_size);
+  if (buffer_size < VescFrame::VESC_MIN_FRAME_SIZE)
+  {
+    return createFailed(num_bytes_needed, what, "Buffer does not contain a complete frame",
+                        VescFrame::VESC_MIN_FRAME_SIZE - buffer_size);
   }
 
   // Check whether buffer begins with a start-of-frame
-  if (*begin != VescFrame::VESC_SOF_VAL_SMALL_FRAME &&
-    *begin != VescFrame::VESC_SOF_VAL_LARGE_FRAME)
+  if (*begin != VescFrame::VESC_SOF_VAL_SMALL_FRAME && *begin != VescFrame::VESC_SOF_VAL_LARGE_FRAME)
   {
-    return createFailed(
-      num_bytes_needed, what,
-      "Buffer must begin with start-of-frame character");
+    return createFailed(num_bytes_needed, what, "Buffer must begin with start-of-frame character");
   }
 
   // Get a view of the payload
   BufferRangeConst view_payload;
-  if (*begin == VescFrame::VESC_SOF_VAL_SMALL_FRAME) {
+  if (*begin == VescFrame::VESC_SOF_VAL_SMALL_FRAME)
+  {
     // Payload size field is one byte
     view_payload.first = begin + 2;
     view_payload.second = view_payload.first + *(begin + 1);
-  } else {
+  }
+  else
+  {
     assert(*begin == VescFrame::VESC_SOF_VAL_LARGE_FRAME);
     // Payload size field is two bytes
     view_payload.first = begin + 3;
@@ -111,7 +107,8 @@ VescPacketPtr VescPacketFactory::createPacket(
   }
 
   // Check the length
-  if (boost::distance(view_payload) > VescFrame::VESC_MAX_PAYLOAD_SIZE) {
+  if (boost::distance(view_payload) > VescFrame::VESC_MAX_PAYLOAD_SIZE)
+  {
     return createFailed(num_bytes_needed, what, "Invalid payload length");
   }
 
@@ -122,15 +119,14 @@ VescPacketPtr VescPacketFactory::createPacket(
 
   // Check whether enough data is loaded in the buffer to complete the frame
   const int frame_size = static_cast<int>(boost::distance(view_frame));
-  if (buffer_size < frame_size) {
-    return createFailed(
-      num_bytes_needed, what,
-      "Buffer does not contain a complete frame",
-      frame_size - buffer_size);
+  if (buffer_size < frame_size)
+  {
+    return createFailed(num_bytes_needed, what, "Buffer does not contain a complete frame", frame_size - buffer_size);
   }
 
   // Check whether the end-of-frame character is valid
-  if (*iter_eof != VescFrame::VESC_EOF_VAL) {
+  if (*iter_eof != VescFrame::VESC_EOF_VAL)
+  {
     return createFailed(num_bytes_needed, what, "Invalid end-of-frame character");
   }
 
@@ -138,7 +134,8 @@ VescPacketPtr VescPacketFactory::createPacket(
   const uint16_t crc = (static_cast<uint16_t>(*iter_crc) << 8) + *(iter_crc + 1);
   VescFrame::CRC crc_calc;
   crc_calc.process_bytes(&(*view_payload.first), boost::distance(view_payload));
-  if (crc != crc_calc.checksum()) {
+  if (crc != crc_calc.checksum())
+  {
     return createFailed(num_bytes_needed, what, "Invalid checksum");
   }
 
@@ -146,18 +143,24 @@ VescPacketPtr VescPacketFactory::createPacket(
   auto raw_frame = std::make_shared<VescFrame>(view_frame, view_payload);
 
   // Construct the corresponding subclass if the packet has a payload
-  if (boost::distance(view_payload) > 0) {
+  if (boost::distance(view_payload) > 0)
+  {
     // Get constructor function from payload ID
-    FactoryMap * p_map = getMap();
+    FactoryMap* p_map = getMap();
     auto search = p_map->find(*view_payload.first);
 
-    if (search != p_map->end()) {
+    if (search != p_map->end())
+    {
       return search->second(raw_frame);
-    } else {
+    }
+    else
+    {
       // No subclass constructor for this packet
       return createFailed(num_bytes_needed, what, "Unknown payload type.");
     }
-  } else {
+  }
+  else
+  {
     // No payload
     return createFailed(num_bytes_needed, what, "Frame does not have a payload");
   }
@@ -165,12 +168,12 @@ VescPacketPtr VescPacketFactory::createPacket(
 
 void VescPacketFactory::registerPacketType(int payload_id, CreateFn fn)
 {
-  FactoryMap * p_map = getMap();
+  FactoryMap* p_map = getMap();
   assert(p_map->count(payload_id) == 0);
   (*p_map)[payload_id] = fn;
 }
 
-VescPacketFactory::FactoryMap * VescPacketFactory::getMap()
+VescPacketFactory::FactoryMap* VescPacketFactory::getMap()
 {
   // Meyer's singleton - construct on first use, thread-safe in C++11+
   static FactoryMap map;

@@ -1,7 +1,7 @@
 /**
  * @file xesc_yfr4_driver.hpp
  * @brief ROS2 driver wrapper for XESC YardForce R4 motor controller
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
  * Original author: Clemens Elflein
  */
@@ -22,7 +22,7 @@ namespace xesc_yfr4_driver
 
 /**
  * @brief ROS2 driver class for XESC YardForce R4 motor controller
- * 
+ *
  * This class implements the XescInterface for the XESC YFR4 adapter,
  * providing status reporting and duty cycle control.
  */
@@ -41,20 +41,20 @@ public:
   ~XescYFR4Driver() override = default;
 
   // Delete copy operations
-  XescYFR4Driver(const XescYFR4Driver &) = delete;
-  XescYFR4Driver & operator=(const XescYFR4Driver &) = delete;
+  XescYFR4Driver(const XescYFR4Driver&) = delete;
+  XescYFR4Driver& operator=(const XescYFR4Driver&) = delete;
 
   /**
    * @brief Get current status (non-blocking)
    * @param[out] state State message to populate
    */
-  void getStatus(xesc_msgs::msg::XescStateStamped & state) override;
+  void getStatus(xesc_msgs::msg::XescStateStamped& state) override;
 
   /**
    * @brief Get current status (blocking until new data available)
    * @param[out] state State message to populate
    */
-  void getStatusBlocking(xesc_msgs::msg::XescStateStamped & state) override;
+  void getStatusBlocking(xesc_msgs::msg::XescStateStamped& state) override;
 
   /**
    * @brief Set motor duty cycle
@@ -72,7 +72,7 @@ private:
    * @brief Error callback for interface errors
    * @param error_msg Error message string
    */
-  void errorCallback(const std::string & error_msg);
+  void errorCallback(const std::string& error_msg);
 
   rclcpp::Node::SharedPtr node_;
   XescYFR4StatusStruct status_{};

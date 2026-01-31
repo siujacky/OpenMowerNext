@@ -1,7 +1,7 @@
 /**
  * @file xesc_interface.hpp
  * @brief XESC Motor Controller Interface
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
  * Original author: Clemens Elflein
  */
@@ -17,7 +17,7 @@ namespace xesc_interface
 /**
  * @class XescInterface
  * @brief Abstract interface for XESC motor controllers
- * 
+ *
  * This interface provides a common API for different XESC motor controller
  * implementations (VESC, xESC 2040, YFR4, etc.)
  */
@@ -30,15 +30,15 @@ public:
    * @brief Get the current motor controller status (non-blocking)
    * @param[out] state The state message to populate
    */
-  virtual void getStatus(xesc_msgs::msg::XescStateStamped & state) = 0;
+  virtual void getStatus(xesc_msgs::msg::XescStateStamped& state) = 0;
 
   /**
    * @brief Get the current motor controller status (blocking)
    * @param[out] state The state message to populate
-   * 
+   *
    * This method will block until a new state is available from the controller.
    */
-  virtual void getStatusBlocking(xesc_msgs::msg::XescStateStamped & state) = 0;
+  virtual void getStatusBlocking(xesc_msgs::msg::XescStateStamped& state) = 0;
 
   /**
    * @brief Set the motor duty cycle
@@ -48,7 +48,7 @@ public:
 
   /**
    * @brief Stop the motor
-   * 
+   *
    * This immediately stops the motor by setting duty cycle to 0.
    */
   virtual void stop() = 0;

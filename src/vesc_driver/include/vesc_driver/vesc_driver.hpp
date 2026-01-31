@@ -1,9 +1,9 @@
 /**
  * @file vesc_driver.hpp
  * @brief VESC Driver - ROS2 wrapper implementing XescInterface
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
- * 
+ *
  * Copyright (c) 2019, SoftBank Corp.
  * All rights reserved.
  *
@@ -57,7 +57,7 @@ namespace vesc_driver
 /**
  * @class VescDriver
  * @brief VESC motor controller driver implementing the XescInterface
- * 
+ *
  * This class provides a ROS2-compatible driver for VESC motor controllers,
  * implementing the common XescInterface for use with the OpenMower system.
  */
@@ -68,7 +68,7 @@ public:
    * @brief Construct a VescDriver
    * @param node Pointer to the ROS2 node for parameter handling and logging
    */
-  explicit VescDriver(rclcpp::Node * node);
+  explicit VescDriver(rclcpp::Node* node);
 
   /**
    * @brief Destructor
@@ -76,22 +76,22 @@ public:
   ~VescDriver() override = default;
 
   // Delete copy/move operations
-  VescDriver(const VescDriver &) = delete;
-  VescDriver & operator=(const VescDriver &) = delete;
-  VescDriver(VescDriver &&) = delete;
-  VescDriver & operator=(VescDriver &&) = delete;
+  VescDriver(const VescDriver&) = delete;
+  VescDriver& operator=(const VescDriver&) = delete;
+  VescDriver(VescDriver&&) = delete;
+  VescDriver& operator=(VescDriver&&) = delete;
 
   /**
    * @brief Get the current motor controller status (non-blocking)
    * @param[out] state The state message to populate
    */
-  void getStatus(xesc_msgs::msg::XescStateStamped & state) override;
+  void getStatus(xesc_msgs::msg::XescStateStamped& state) override;
 
   /**
    * @brief Get the current motor controller status (blocking)
    * @param[out] state The state message to populate
    */
-  void getStatusBlocking(xesc_msgs::msg::XescStateStamped & state) override;
+  void getStatusBlocking(xesc_msgs::msg::XescStateStamped& state) override;
 
   /**
    * @brief Set the motor duty cycle
@@ -109,7 +109,7 @@ private:
    * @brief Callback for VESC error messages
    * @param error The error message
    */
-  void vescErrorCallback(const std::string & error);
+  void vescErrorCallback(const std::string& error);
 
   /**
    * @brief Helper class for command limits
@@ -123,11 +123,8 @@ private:
      * @param min_lower Minimum allowed lower bound
      * @param max_upper Maximum allowed upper bound
      */
-    CommandLimit(
-      rclcpp::Node * node,
-      const std::string & str,
-      const std::optional<double> & min_lower = std::nullopt,
-      const std::optional<double> & max_upper = std::nullopt);
+    CommandLimit(rclcpp::Node* node, const std::string& str, const std::optional<double>& min_lower = std::nullopt,
+                 const std::optional<double>& max_upper = std::nullopt);
 
     /**
      * @brief Clip a value to the configured limits
@@ -139,11 +136,11 @@ private:
     std::string name;
     std::optional<double> lower;
     std::optional<double> upper;
-    rclcpp::Node * node_;
+    rclcpp::Node* node_;
   };
 
   // ROS2 node reference for logging
-  rclcpp::Node * node_;
+  rclcpp::Node* node_;
 
   // Interface to the VESC
   VescInterface vesc_;

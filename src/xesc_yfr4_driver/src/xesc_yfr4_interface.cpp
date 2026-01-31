@@ -1,10 +1,10 @@
 /**
  * @file xesc_yfr4_interface.cpp
  * @brief Serial interface implementation for XESC YardForce R4 motor controller
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
  * Original author: Clemens Elflein
- * 
+ *
  * Changes from ROS1:
  * - pthread replaced with std::thread
  * - sleep replaced with std::this_thread::sleep_for
@@ -18,11 +18,10 @@
 namespace xesc_yfr4_driver
 {
 
-XescYFR4Interface::XescYFR4Interface(const ErrorHandlerFunction & error_handler)
-: serial_(std::string(), 115200, serial::Timeout::simpleTimeout(100),
-    serial::eightbits, serial::parity_none, serial::stopbits_one,
-    serial::flowcontrol_none),
-  error_handler_(error_handler)
+XescYFR4Interface::XescYFR4Interface(const ErrorHandlerFunction& error_handler)
+  : serial_(std::string(), 115200, serial::Timeout::simpleTimeout(100), serial::eightbits, serial::parity_none,
+            serial::stopbits_one, serial::flowcontrol_none)
+  , error_handler_(error_handler)
 {
 }
 
@@ -47,9 +46,12 @@ void XescYFR4Interface::rxThread()
     status_.connection_state = XescYFR4ConnectionState::DISCONNECTED;
   }
 
-  while (rx_thread_run_) {
-    if (!serial_.isOpen()) {
-      try {
+  while (rx_thread_run_)
+  {
+    if (!serial_.isOpen())
+    {
+      try
+      {
         status_.connection_state = XescYFR4ConnectionState::DISCONNECTED;
 
         serial_.setPort(port_);
@@ -62,7 +64,9 @@ void XescYFR4Interface::rxThread()
         std::this_thread::sleep_for(std::chrono::seconds(1));
         status_.connection_state = XescYFR4ConnectionState::CONNECTED;
         sendSettings();
-      } catch (const std::exception & e) {
+      }
+      catch (const std::exception& e)
+      {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::ostringstream ss;
         ss << "Error connecting to xESC on Port: " << serial_.getPort();
@@ -71,9 +75,12 @@ void XescYFR4Interface::rxThread()
     }
 
     std::size_t bytes_read = 0;
-    try {
+    try
+    {
       bytes_read = serial_.read(buffer + read_pos, 1);
-    } catch (const std::exception & e) {
+    }
+    catch (const std::exception& e)
+    {
       std::ostringstream ss;
       ss << "Error reading serial_port. Closing Connection. Port: " << serial_.getPort();
       error_handler_(ss.str());
@@ -81,59 +88,69 @@ void XescYFR4Interface::rxThread()
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    if (read_pos + bytes_read >= BUFFER_SIZE) {
+    if (read_pos + bytes_read >= BUFFER_SIZE)
+    {
       read_pos = 0;
       bytes_read = 0;
       std::ostringstream ss;
-      ss << "Prevented buffer overflow. There is a problem with the serial comms. Port: "
-         << serial_.getPort();
+      ss << "Prevented buffer overflow. There is a problem with the serial comms. Port: " << serial_.getPort();
       error_handler_(ss.str());
     }
 
-    if (bytes_read) {
-      if (buffer[read_pos] == 0) {
+    if (bytes_read)
+    {
+      if (buffer[read_pos] == 0)
+      {
         // End of packet found
         std::size_t data_size = cobs.decode(buffer, read_pos, buffer_decoded);
 
         // First, check the CRC
-        if (data_size < 3) {
+        if (data_size < 3)
+        {
           // We don't even have one byte of data
           std::ostringstream ss;
           ss << "Got empty packet from xESC. Port: " << serial_.getPort();
           error_handler_(ss.str());
-        } else {
+        }
+        else
+        {
           // We have at least 1 byte of data, check the CRC
           crc.reset();
           crc.process_bytes(buffer_decoded, data_size - 2);
           uint16_t checksum = crc.checksum();
-          uint16_t received_checksum = *reinterpret_cast<uint16_t *>(buffer_decoded + data_size - 2);
+          uint16_t received_checksum = *reinterpret_cast<uint16_t*>(buffer_decoded + data_size - 2);
 
-          if (checksum == received_checksum) {
+          if (checksum == received_checksum)
+          {
             // Packet checksum is OK, process it
-            switch (buffer_decoded[0]) {
-              case XESCYFR4_MSG_TYPE_STATUS:
+            switch (buffer_decoded[0])
+            {
+              case XESCYFR4_MSG_TYPE_STATUS: {
+                if (data_size == sizeof(XescYFR4StatusPacket))
                 {
-                  if (data_size == sizeof(XescYFR4StatusPacket)) {
-                    handlePacket(reinterpret_cast<XescYFR4StatusPacket *>(buffer_decoded));
-                  } else {
-                    std::ostringstream ss;
-                    ss << "Got packet with wrong size on port: " << serial_.getPort()
-                       << ". id was: " << static_cast<int>(buffer_decoded[0]);
-                    error_handler_(ss.str());
-                  }
+                  handlePacket(reinterpret_cast<XescYFR4StatusPacket*>(buffer_decoded));
                 }
-                break;
-
-              default:
+                else
                 {
                   std::ostringstream ss;
-                  ss << "Got unknown valid packet from xESC on Port: " << serial_.getPort()
+                  ss << "Got packet with wrong size on port: " << serial_.getPort()
                      << ". id was: " << static_cast<int>(buffer_decoded[0]);
                   error_handler_(ss.str());
                 }
-                break;
+              }
+              break;
+
+              default: {
+                std::ostringstream ss;
+                ss << "Got unknown valid packet from xESC on Port: " << serial_.getPort()
+                   << ". id was: " << static_cast<int>(buffer_decoded[0]);
+                error_handler_(ss.str());
+              }
+              break;
             }
-          } else {
+          }
+          else
+          {
             std::ostringstream ss;
             ss << "Got invalid checksum from xESC on Port: " << serial_.getPort();
             error_handler_(ss.str());
@@ -141,7 +158,9 @@ void XescYFR4Interface::rxThread()
         }
 
         read_pos = 0;
-      } else {
+      }
+      else
+      {
         read_pos += bytes_read;
       }
     }
@@ -150,10 +169,11 @@ void XescYFR4Interface::rxThread()
   serial_.close();
 }
 
-void XescYFR4Interface::handlePacket(XescYFR4StatusPacket * packet)
+void XescYFR4Interface::handlePacket(XescYFR4StatusPacket* packet)
 {
   // Only update the state if connection state is connected
-  if (status_.connection_state == XescYFR4ConnectionState::CONNECTED) {
+  if (status_.connection_state == XescYFR4ConnectionState::CONNECTED)
+  {
     std::lock_guard<std::mutex> lk(status_mutex_);
     status_.seq = packet->seq;
     status_.fw_version_major = packet->fw_version_major;
@@ -168,29 +188,33 @@ void XescYFR4Interface::handlePacket(XescYFR4StatusPacket * packet)
     status_.fault_code = packet->fault_code;
 
     // If unconfigured, send settings
-    if (packet->fault_code & FAULT_UNINITIALIZED) {
+    if (packet->fault_code & FAULT_UNINITIALIZED)
+    {
       sendSettings();
     }
 
     status_cv_.notify_all();
-  } else {
+  }
+  else
+  {
     std::ostringstream ss;
     ss << "Got packet with status != connected on port: " << serial_.getPort();
     error_handler_(ss.str());
   }
 }
 
-bool XescYFR4Interface::send(uint8_t * packet, std::size_t length)
+bool XescYFR4Interface::send(uint8_t* packet, std::size_t length)
 {
   std::unique_lock<std::mutex> lk(serial_tx_mutex_);
-  if (!serial_.isOpen()) {
+  if (!serial_.isOpen())
+  {
     return false;
   }
 
   tx_crc_.reset();
   tx_crc_.process_bytes(packet, length - 2);
   uint16_t checksum = tx_crc_.checksum();
-  *reinterpret_cast<uint16_t *>(packet + length - 2) = checksum;
+  *reinterpret_cast<uint16_t*>(packet + length - 2) = checksum;
 
   std::size_t encoded_size = COBS::encode(packet, length, tx_buffer_);
   tx_buffer_[encoded_size] = 0;
@@ -206,10 +230,10 @@ void XescYFR4Interface::setDutyCycle(double duty_cycle)
   control_packet.message_type = XESCYFR4_MSG_TYPE_CONTROL;
   control_packet.duty_cycle = duty_cycle;
   control_packet.crc = 0;
-  send(reinterpret_cast<uint8_t *>(&control_packet), sizeof(control_packet));
+  send(reinterpret_cast<uint8_t*>(&control_packet), sizeof(control_packet));
 }
 
-void XescYFR4Interface::start(const std::string & port)
+void XescYFR4Interface::start(const std::string& port)
 {
   port_ = port;
   rx_thread_run_ = true;
@@ -225,18 +249,19 @@ void XescYFR4Interface::stop()
   rx_thread_run_ = false;
 
   // Wait for IO thread to actually exit
-  if (rx_thread_.joinable()) {
+  if (rx_thread_.joinable())
+  {
     rx_thread_.join();
   }
 }
 
-void XescYFR4Interface::getStatus(XescYFR4StatusStruct * status)
+void XescYFR4Interface::getStatus(XescYFR4StatusStruct* status)
 {
   std::unique_lock<std::mutex> lk(status_mutex_);
   *status = status_;
 }
 
-void XescYFR4Interface::waitForStatus(XescYFR4StatusStruct * status)
+void XescYFR4Interface::waitForStatus(XescYFR4StatusStruct* status)
 {
   std::unique_lock<std::mutex> lk(status_mutex_);
   status_cv_.wait(lk);
@@ -245,18 +270,16 @@ void XescYFR4Interface::waitForStatus(XescYFR4StatusStruct * status)
 
 void XescYFR4Interface::sendSettings()
 {
-  if (!settings_valid_) {
+  if (!settings_valid_)
+  {
     error_handler_("Error sending xESC settings: Settings invalid. Call updateSettings first!");
     return;
   }
   settings_.message_type = XESCYFR4_MSG_TYPE_SETTINGS;
-  send(reinterpret_cast<uint8_t *>(&settings_), sizeof(settings_));
+  send(reinterpret_cast<uint8_t*>(&settings_), sizeof(settings_));
 }
 
-void XescYFR4Interface::updateSettings(
-  float motor_current_limit,
-  float min_pcb_temp,
-  float max_pcb_temp)
+void XescYFR4Interface::updateSettings(float motor_current_limit, float min_pcb_temp, float max_pcb_temp)
 {
   settings_.motor_current_limit = motor_current_limit;
   settings_.min_pcb_temp = min_pcb_temp;

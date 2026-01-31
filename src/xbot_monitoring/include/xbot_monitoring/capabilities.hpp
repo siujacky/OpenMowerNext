@@ -7,11 +7,12 @@
 
 #include <nlohmann/json.hpp>
 
-namespace xbot_monitoring {
+namespace xbot_monitoring
+{
 
 inline const nlohmann::ordered_json CAPABILITIES = {
-    {"rpc", 1},
-    {"map:json", 1},
+  { "rpc", 1 },
+  { "map:json", 1 },
 };
 
 }  // namespace xbot_monitoring

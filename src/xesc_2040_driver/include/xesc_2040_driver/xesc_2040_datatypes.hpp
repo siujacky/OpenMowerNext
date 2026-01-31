@@ -1,7 +1,7 @@
 /**
  * @file xesc_2040_datatypes.hpp
  * @brief Data types for XESC 2040 communication protocol
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
  * Original author: Clemens Elflein
  */
@@ -40,16 +40,16 @@ struct Xesc2040StatusPacket
   uint32_t seq;
   uint8_t fw_version_major;
   uint8_t fw_version_minor;
-  double voltage_input;       ///< Input voltage (volt)
-  double temperature_pcb;     ///< PCB temperature (degrees Celsius)
-  double temperature_motor;   ///< Motor temperature (degrees Celsius)
-  double current_input;       ///< Input current (ampere)
-  double duty_cycle;          ///< Duty cycle (0 to 1)
-  uint32_t tacho;             ///< Tachometer count
-  uint32_t tacho_absolute;    ///< Wheel ticks absolute
-  bool direction;             ///< Direction CW/CCW
-  int32_t fault_code;         ///< Fault code bitmask
-  uint16_t crc;               ///< CRC checksum
+  double voltage_input;      ///< Input voltage (volt)
+  double temperature_pcb;    ///< PCB temperature (degrees Celsius)
+  double temperature_motor;  ///< Motor temperature (degrees Celsius)
+  double current_input;      ///< Input current (ampere)
+  double duty_cycle;         ///< Duty cycle (0 to 1)
+  uint32_t tacho;            ///< Tachometer count
+  uint32_t tacho_absolute;   ///< Wheel ticks absolute
+  bool direction;            ///< Direction CW/CCW
+  int32_t fault_code;        ///< Fault code bitmask
+  uint16_t crc;              ///< CRC checksum
 };
 
 /**
@@ -58,8 +58,8 @@ struct Xesc2040StatusPacket
 struct Xesc2040ControlPacket
 {
   uint8_t message_type;
-  double duty_cycle;          ///< Duty cycle (0 to 1)
-  uint16_t crc;               ///< CRC checksum
+  double duty_cycle;  ///< Duty cycle (0 to 1)
+  uint16_t crc;       ///< CRC checksum
 };
 
 /**

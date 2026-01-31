@@ -1,7 +1,7 @@
 /**
  * @file vesc_packet.hpp
  * @brief VESC Packet definitions for serial communication
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
  * Original copyright: SoftBank Corp. (BSD 3-clause)
  * Original author: Michael T. Boulet (MIT)
@@ -44,7 +44,7 @@ public:
    * @brief Gets a reference of the frame
    * @return Reference of the frame
    */
-  virtual const Buffer & getFrame() const
+  virtual const Buffer& getFrame() const
   {
     return frame_;
   }
@@ -74,7 +74,7 @@ private:
    * @param frame View of the raw frame bytes
    * @param payload View of the payload section
    */
-  VescFrame(const BufferRangeConst & frame, const BufferRangeConst & payload);
+  VescFrame(const BufferRangeConst& frame, const BufferRangeConst& payload);
 
   // VescPacketFactory needs access to the private constructor
   friend class VescPacketFactory;
@@ -88,14 +88,14 @@ class VescPacket : public VescFrame
 public:
   virtual ~VescPacket() = default;
 
-  virtual const std::string & getName() const
+  virtual const std::string& getName() const
   {
     return name_;
   }
 
 protected:
-  VescPacket(const std::string & name, const int16_t payload_size, const int16_t payload_id);
-  VescPacket(const std::string & name, std::shared_ptr<VescFrame> raw);
+  VescPacket(const std::string& name, const int16_t payload_size, const int16_t payload_id);
+  VescPacket(const std::string& name, std::shared_ptr<VescFrame> raw);
 
 private:
   std::string name_;

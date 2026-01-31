@@ -1,9 +1,9 @@
 /**
  * @file vesc_interface.cpp
  * @brief VESC Serial Interface implementation
- * 
+ *
  * Ported from open_mower_ros (ROS1) to ROS2
- * 
+ *
  * Copyright (c) 2019, SoftBank Corp.
  * All rights reserved.
  *
@@ -41,18 +41,10 @@
 namespace vesc_driver
 {
 
-VescInterface::VescInterface(
-  const ErrorHandlerFunction & error_handler,
-  uint32_t state_request_millis)
-: serial_(
-    std::string(),
-    115200,
-    serial::Timeout::simpleTimeout(100),
-    serial::eightbits,
-    serial::parity_none,
-    serial::stopbits_one,
-    serial::flowcontrol_none),
-  state_request_millis_(state_request_millis)
+VescInterface::VescInterface(const ErrorHandlerFunction& error_handler, uint32_t state_request_millis)
+  : serial_(std::string(), 115200, serial::Timeout::simpleTimeout(100), serial::eightbits, serial::parity_none,
+            serial::stopbits_one, serial::flowcontrol_none)
+  , state_request_millis_(state_request_millis)
 {
   error_handler_ = error_handler;
 }
@@ -66,7 +58,8 @@ void VescInterface::updateThread()
 {
   auto last_fw_request = std::chrono::steady_clock::now();
 
-  while (update_thread_run_) {
+  while (update_thread_run_)
+  {
     std::this_thread::sleep_for(std::chrono::milliseconds(state_request_millis_));
 
     auto now = std::chrono::steady_clock::now();
@@ -76,15 +69,17 @@ void VescInterface::updateThread()
       state = status_.connection_state;
     }
 
-    if (state == VescConnectionState::WAITING_FOR_FW) {
+    if (state == VescConnectionState::WAITING_FOR_FW)
+    {
       auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_fw_request);
-      if (elapsed.count() > 1000) {
+      if (elapsed.count() > 1000)
+      {
         last_fw_request = now;
         requestFWVersion();
       }
       continue;
-    } else if (state == VescConnectionState::CONNECTED ||
-      state == VescConnectionState::CONNECTED_INCOMPATIBLE_FW)
+    }
+    else if (state == VescConnectionState::CONNECTED || state == VescConnectionState::CONNECTED_INCOMPATIBLE_FW)
     {
       requestState();
     }
@@ -102,18 +97,23 @@ void VescInterface::rxThread()
     status_.connection_state = VescConnectionState::DISCONNECTED;
   }
 
-  while (rx_thread_run_) {
+  while (rx_thread_run_)
+  {
     // Check if the serial port is connected. If not, connect to it.
-    if (!serial_.isOpen()) {
+    if (!serial_.isOpen())
+    {
       {
         std::unique_lock<std::mutex> lk(status_mutex_);
         status_ = VescStatusStruct{};
         status_.connection_state = VescConnectionState::DISCONNECTED;
       }
-      try {
+      try
+      {
         serial_.setPort(port_);
         serial_.open();
-      } catch (const std::exception & e) {
+      }
+      catch (const std::exception& e)
+      {
         // Retry later
         std::this_thread::sleep_for(std::chrono::seconds(1));
         continue;
@@ -125,25 +125,25 @@ void VescInterface::rxThread()
     }
 
     int bytes_needed = VescFrame::VESC_MIN_FRAME_SIZE;
-    if (!buffer.empty()) {
+    if (!buffer.empty())
+    {
       // Search buffer for valid packet(s)
       auto iter = buffer.begin();
       auto iter_begin = buffer.begin();
-      while (iter != buffer.end()) {
+      while (iter != buffer.end())
+      {
         // Check if valid start-of-frame character
-        if (*iter == VescFrame::VESC_SOF_VAL_SMALL_FRAME ||
-          *iter == VescFrame::VESC_SOF_VAL_LARGE_FRAME)
+        if (*iter == VescFrame::VESC_SOF_VAL_SMALL_FRAME || *iter == VescFrame::VESC_SOF_VAL_LARGE_FRAME)
         {
           // Good start, now attempt to create packet
           std::string error;
-          VescPacketConstPtr packet = VescPacketFactory::createPacket(
-            iter, buffer.end(),
-            &bytes_needed,
-            &error);
+          VescPacketConstPtr packet = VescPacketFactory::createPacket(iter, buffer.end(), &bytes_needed, &error);
 
-          if (packet) {
+          if (packet)
+          {
             // Good packet, check if we skipped any data
-            if (std::distance(iter_begin, iter) > 0) {
+            if (std::distance(iter_begin, iter) > 0)
+            {
               std::ostringstream ss;
               ss << "Out-of-sync with VESC, unknown data leading valid frame. Discarding "
                  << std::distance(iter_begin, iter) << " bytes.";
@@ -156,10 +156,14 @@ void VescInterface::rxThread()
             iter_begin = iter;
             // Continue to look for another frame in buffer
             continue;
-          } else if (bytes_needed > 0) {
+          }
+          else if (bytes_needed > 0)
+          {
             // Need more data, break out of while loop
             break;
-          } else {
+          }
+          else
+          {
             // This was not a packet, move on to next byte
             error_handler_(error);
           }
@@ -169,12 +173,14 @@ void VescInterface::rxThread()
       }
 
       // If iter is at the end of the buffer, more bytes are needed
-      if (iter == buffer.end()) {
+      if (iter == buffer.end())
+      {
         bytes_needed = VescFrame::VESC_MIN_FRAME_SIZE;
       }
 
       // Erase "used" buffer
-      if (std::distance(iter_begin, iter) > 0) {
+      if (std::distance(iter_begin, iter) > 0)
+      {
         std::ostringstream ss;
         ss << "Out-of-sync with VESC, discarding " << std::distance(iter_begin, iter) << " bytes.";
         error_handler_(ss.str());
@@ -183,16 +189,18 @@ void VescInterface::rxThread()
     }
 
     // Attempt to read at least bytes_needed bytes from the serial port
-    int bytes_to_read = std::max(
-      bytes_needed,
-      std::min(4096, static_cast<int>(serial_.available())));
+    int bytes_to_read = std::max(bytes_needed, std::min(4096, static_cast<int>(serial_.available())));
 
-    try {
+    try
+    {
       size_t bytes_read = serial_.read(buffer, static_cast<size_t>(bytes_to_read));
-      if (bytes_needed > 0 && bytes_read == 0 && !buffer.empty()) {
+      if (bytes_needed > 0 && bytes_read == 0 && !buffer.empty())
+      {
         error_handler_("Possibly out-of-sync with VESC, read timeout in the middle of a frame.");
       }
-    } catch (const std::exception & e) {
+    }
+    catch (const std::exception& e)
+    {
       error_handler_("Error during serial read. Reconnecting.");
       {
         std::unique_lock<std::mutex> lk(status_mutex_);
@@ -215,8 +223,8 @@ void VescInterface::handlePacket(VescPacketConstPtr packet)
 
   // Only update the state if connection state is connected
   if ((current_state == VescConnectionState::CONNECTED ||
-    current_state == VescConnectionState::CONNECTED_INCOMPATIBLE_FW) &&
-    packet->getName() == "Values")
+       current_state == VescConnectionState::CONNECTED_INCOMPATIBLE_FW) &&
+      packet->getName() == "Values")
   {
     std::lock_guard<std::mutex> lk(status_mutex_);
     auto values = std::dynamic_pointer_cast<VescPacketValues const>(packet);
@@ -240,7 +248,9 @@ void VescInterface::handlePacket(VescPacketConstPtr packet)
     status_.tacho_absolute = values->getDisplacement();
     status_.direction = values->getVelocityERPM() < 0;
     status_cv_.notify_all();
-  } else if (packet->getName() == "FWVersion") {
+  }
+  else if (packet->getName() == "FWVersion")
+  {
     std::lock_guard<std::mutex> lk(status_mutex_);
     auto fw_version = std::dynamic_pointer_cast<VescPacketFWVersion const>(packet);
 
@@ -249,9 +259,12 @@ void VescInterface::handlePacket(VescPacketConstPtr packet)
     status_.fw_version_minor = static_cast<uint8_t>(fw_version->fwMinor());
 
     // Check for fully compatible FW here
-    if (status_.fw_version_major == 5 && status_.fw_version_minor == 3) {
+    if (status_.fw_version_major == 5 && status_.fw_version_minor == 3)
+    {
       status_.connection_state = VescConnectionState::CONNECTED;
-    } else {
+    }
+    else
+    {
       status_.connection_state = VescConnectionState::CONNECTED_INCOMPATIBLE_FW;
     }
 
@@ -259,10 +272,11 @@ void VescInterface::handlePacket(VescPacketConstPtr packet)
   }
 }
 
-bool VescInterface::send(const VescPacket & packet)
+bool VescInterface::send(const VescPacket& packet)
 {
   std::unique_lock<std::mutex> lk(serial_tx_mutex_);
-  if (!serial_.isOpen()) {
+  if (!serial_.isOpen())
+  {
     return false;
   }
   size_t written = serial_.write(packet.getFrame());
@@ -304,7 +318,7 @@ void VescInterface::setPosition(double position)
   send(VescPacketSetPos(position));
 }
 
-void VescInterface::start(const std::string & port)
+void VescInterface::start(const std::string& port)
 {
   port_ = port;
   // Start up monitoring threads
@@ -324,21 +338,23 @@ void VescInterface::stop()
   update_thread_run_ = false;
 
   // Wait for threads to actually exit
-  if (rx_thread_.joinable()) {
+  if (rx_thread_.joinable())
+  {
     rx_thread_.join();
   }
-  if (update_thread_.joinable()) {
+  if (update_thread_.joinable())
+  {
     update_thread_.join();
   }
 }
 
-void VescInterface::getStatus(VescStatusStruct * status)
+void VescInterface::getStatus(VescStatusStruct* status)
 {
   std::unique_lock<std::mutex> lk(status_mutex_);
   *status = status_;
 }
 
-void VescInterface::waitForStatus(VescStatusStruct * status)
+void VescInterface::waitForStatus(VescStatusStruct* status)
 {
   std::unique_lock<std::mutex> lk(status_mutex_);
   // Wait for new data
