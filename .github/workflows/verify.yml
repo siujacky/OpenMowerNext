@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: verify-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           source /opt/ros/jazzy/setup.bash
-          rosdep update
+          rosdep update --rosdistro jazzy || rosdep update --rosdistro jazzy
           make custom-deps || true
           # Skip lib directory to avoid duplicate package names from submodules
           rosdep install --from-paths . --skip-keys="vesc_driver vesc_msgs" -y -r --ignore-src || true
