@@ -35,7 +35,14 @@ open_mower_next::docking_helper::DockingHelperNode::DockingHelperNode(const rclc
 
 open_mower_next::docking_helper::DockingHelperNode::~DockingHelperNode()
 {
-  // No specific cleanup required
+  std::lock_guard<std::mutex> lock(threads_mutex_);
+  for (auto& t : action_threads_)
+  {
+    if (t.joinable())
+    {
+      t.join();
+    }
+  }
 }
 
 void open_mower_next::docking_helper::DockingHelperNode::mapCallback(const open_mower_next::msg::Map::SharedPtr msg)
@@ -352,10 +359,13 @@ void open_mower_next::docking_helper::DockingHelperNode::executeDockingAction(
 void open_mower_next::docking_helper::DockingHelperNode::handleDockRobotNearestAccepted(
     const std::shared_ptr<DockRobotNearestGoalHandle> goal_handle)
 {
-  std::thread{ [this, goal_handle]() {
-    auto nearest_station = findNearestDockingStation();
-    executeDockingAction<DockRobotNearestAction>(goal_handle, nearest_station);
-  } }.detach();
+  {
+    std::lock_guard<std::mutex> lock(threads_mutex_);
+    action_threads_.emplace_back([this, goal_handle]() {
+      auto nearest_station = findNearestDockingStation();
+      executeDockingAction<DockRobotNearestAction>(goal_handle, nearest_station);
+    });
+  }
 }
 
 std::shared_ptr<open_mower_next::msg::DockingStation>
@@ -409,9 +419,12 @@ rclcpp_action::CancelResponse open_mower_next::docking_helper::DockingHelperNode
 void open_mower_next::docking_helper::DockingHelperNode::handleDockRobotToAccepted(
     const std::shared_ptr<DockRobotToGoalHandle> goal_handle)
 {
-  std::thread{ [this, goal_handle]() {
-    auto goal = goal_handle->get_goal();
-    auto docking_station = findDockingStationById(goal->dock_id);
-    executeDockingAction<DockRobotToAction>(goal_handle, docking_station);
-  } }.detach();
+  {
+    std::lock_guard<std::mutex> lock(threads_mutex_);
+    action_threads_.emplace_back([this, goal_handle]() {
+      auto goal = goal_handle->get_goal();
+      auto docking_station = findDockingStationById(goal->dock_id);
+      executeDockingAction<DockRobotToAction>(goal_handle, docking_station);
+    });
+  }
 }

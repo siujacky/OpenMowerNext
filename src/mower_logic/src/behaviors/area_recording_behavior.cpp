@@ -587,11 +587,11 @@ Behavior* AreaRecordingBehavior::execute()
 
         if (has_outline_.load())
         {
-          sub_state_.store(1);
+          sub_state_.store(2);
         }
         else
         {
-          sub_state_.store(2);
+          sub_state_.store(1);
         }
 
         bool success = record_new_polygon(poly, result_overlay);

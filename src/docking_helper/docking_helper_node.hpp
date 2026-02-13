@@ -67,6 +67,9 @@ private:
   template <typename ActionT, typename GoalHandleT>
   void executeDockingAction(const std::shared_ptr<GoalHandleT>& goal_handle,
                             const std::shared_ptr<open_mower_next::msg::DockingStation>& docking_station);
+
+  std::mutex threads_mutex_;
+  std::vector<std::thread> action_threads_;
 };
 
 }  // namespace open_mower_next::docking_helper

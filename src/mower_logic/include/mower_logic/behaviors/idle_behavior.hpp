@@ -6,6 +6,7 @@
 #ifndef MOWER_LOGIC__BEHAVIORS__IDLE_BEHAVIOR_HPP_
 #define MOWER_LOGIC__BEHAVIORS__IDLE_BEHAVIOR_HPP_
 
+#include <atomic>
 #include <vector>
 #include "mower_logic/behaviors/behavior.hpp"
 #include "xbot_msgs/msg/action_info.hpp"
@@ -44,8 +45,8 @@ public:
 
 private:
   bool stay_docked_ = false;
-  bool manual_start_mowing_ = false;
-  bool start_area_recorder_ = false;
+  std::atomic<bool> manual_start_mowing_{false};
+  std::atomic<bool> start_area_recorder_{false};
   std::vector<xbot_msgs::msg::ActionInfo> actions_;
 };
 

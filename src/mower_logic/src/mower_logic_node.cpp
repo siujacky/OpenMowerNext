@@ -46,7 +46,10 @@ namespace mower_logic
 class MowerLogicNode : public rclcpp::Node
 {
 public:
-  MowerLogicNode() : Node("mower_logic")
+  MowerLogicNode() : Node("mower_logic"),
+    last_good_gps_(0, 0, RCL_ROS_TIME),
+    joy_vel_time_(0, 0, RCL_ROS_TIME),
+    gps_initialized_(false)
   {
     RCLCPP_INFO(this->get_logger(), "Initializing Mower Logic Node");
 
@@ -150,12 +153,20 @@ public:
     // Main behavior loop
     while (rclcpp::ok())
     {
-      if (current_behavior_ != nullptr)
+      Behavior* behavior = nullptr;
       {
-        current_behavior_->start(config_, shared_state_, this);
-        Behavior* next_behavior = current_behavior_->execute();
-        current_behavior_->exit();
-        current_behavior_ = next_behavior;
+        std::lock_guard<std::mutex> lock(behavior_mutex_);
+        behavior = current_behavior_;
+      }
+      if (behavior != nullptr)
+      {
+        behavior->start(config_, shared_state_, this);
+        Behavior* next_behavior = behavior->execute();
+        behavior->exit();
+        {
+          std::lock_guard<std::mutex> lock(behavior_mutex_);
+          current_behavior_ = next_behavior;
+        }
       }
       else
       {
@@ -296,13 +307,16 @@ private:
     high_level_status_.is_charging = power.v_charge > 10.0;
 
     // Handle emergency state
-    if (current_behavior_ != nullptr && emergency.latched_emergency)
     {
-      current_behavior_->requestPause(PAUSE_EMERGENCY);
-    }
-    else if (current_behavior_ != nullptr)
-    {
-      current_behavior_->requestContinue(PAUSE_EMERGENCY);
+      std::lock_guard<std::mutex> lock(behavior_mutex_);
+      if (current_behavior_ != nullptr && emergency.latched_emergency)
+      {
+        current_behavior_->requestPause(PAUSE_EMERGENCY);
+      }
+      else if (current_behavior_ != nullptr)
+      {
+        current_behavior_->requestContinue(PAUSE_EMERGENCY);
+      }
     }
 
     // Check pose timeout
@@ -326,6 +340,7 @@ private:
     if (isGpsGood() || config_.ignore_gps_errors)
     {
       last_good_gps_ = this->now();
+      gps_initialized_ = true;
       high_level_status_.gps_quality_percent =
           1.0 - std::min(1.0, pose.position_accuracy / config_.max_position_accuracy);
     }
@@ -334,16 +349,19 @@ private:
       high_level_status_.gps_quality_percent = pose.orientation_valid ? 0.0 : -1.0;
     }
 
-    bool gps_timeout = (this->now() - last_good_gps_).seconds() > config_.gps_timeout;
+    bool gps_timeout = gps_initialized_ && (this->now() - last_good_gps_).seconds() > config_.gps_timeout;
 
-    if (current_behavior_ != nullptr && current_behavior_->needs_gps())
     {
-      current_behavior_->setGoodGPS(!gps_timeout);
-      if (gps_timeout)
+      std::lock_guard<std::mutex> lock(behavior_mutex_);
+      if (current_behavior_ != nullptr && current_behavior_->needs_gps())
       {
-        stopBlade();
-        stopMoving();
-        return;
+        current_behavior_->setGoodGPS(!gps_timeout);
+        if (gps_timeout)
+        {
+          stopBlade();
+          stopMoving();
+          return;
+        }
       }
     }
 
@@ -353,13 +371,21 @@ private:
     battery_percent = std::clamp(battery_percent, 0.0, 1.0);
     high_level_status_.battery_percent = battery_percent;
 
-    // Enable mower if allowed
-    mower_allowed_.store(true);
-    setMowerEnabled(current_behavior_ != nullptr && mower_allowed_.load() && current_behavior_->mower_enabled());
+    // Enable mower if allowed — only set true when conditions are actually safe
+    if (!emergency.latched_emergency && (!gps_timeout || !gps_initialized_))
+    {
+      mower_allowed_.store(true);
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(behavior_mutex_);
+      setMowerEnabled(current_behavior_ != nullptr && mower_allowed_.load() && current_behavior_->mower_enabled());
+    }
   }
 
   void updateUI()
   {
+    std::lock_guard<std::mutex> lock(behavior_mutex_);
     if (current_behavior_)
     {
       high_level_status_.state_name = current_behavior_->state_name();
@@ -378,6 +404,7 @@ private:
   void joyVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
   {
     joy_vel_time_ = this->now();
+    std::lock_guard<std::mutex> lock(behavior_mutex_);
     if (current_behavior_ && current_behavior_->redirect_joystick())
     {
       cmd_vel_pub_->publish(*msg);
@@ -393,9 +420,12 @@ private:
       return;
     }
 
-    if (current_behavior_)
     {
-      current_behavior_->handle_action(msg->data);
+      std::lock_guard<std::mutex> lock(behavior_mutex_);
+      if (current_behavior_)
+      {
+        current_behavior_->handle_action(msg->data);
+      }
     }
   }
 
@@ -404,32 +434,35 @@ private:
   {
     using ControlRequest = mower_msgs::srv::HighLevelControlSrv::Request;
 
-    switch (request->command)
     {
-      case ControlRequest::COMMAND_HOME:
-        RCLCPP_INFO(this->get_logger(), "COMMAND_HOME");
-        if (current_behavior_)
-          current_behavior_->command_home();
-        break;
-      case ControlRequest::COMMAND_START:
-        RCLCPP_INFO(this->get_logger(), "COMMAND_START");
-        if (current_behavior_)
-          current_behavior_->command_start();
-        break;
-      case ControlRequest::COMMAND_S1:
-        RCLCPP_INFO(this->get_logger(), "COMMAND_S1");
-        if (current_behavior_)
-          current_behavior_->command_s1();
-        break;
-      case ControlRequest::COMMAND_S2:
-        RCLCPP_INFO(this->get_logger(), "COMMAND_S2");
-        if (current_behavior_)
-          current_behavior_->command_s2();
-        break;
-      case ControlRequest::COMMAND_RESET_EMERGENCY:
+      std::lock_guard<std::mutex> lock(behavior_mutex_);
+      switch (request->command)
+      {
+        case ControlRequest::COMMAND_HOME:
+          RCLCPP_INFO(this->get_logger(), "COMMAND_HOME");
+          if (current_behavior_)
+            current_behavior_->command_home();
+          break;
+        case ControlRequest::COMMAND_START:
+          RCLCPP_INFO(this->get_logger(), "COMMAND_START");
+          if (current_behavior_)
+            current_behavior_->command_start();
+          break;
+        case ControlRequest::COMMAND_S1:
+          RCLCPP_INFO(this->get_logger(), "COMMAND_S1");
+          if (current_behavior_)
+            current_behavior_->command_s1();
+          break;
+        case ControlRequest::COMMAND_S2:
+          RCLCPP_INFO(this->get_logger(), "COMMAND_S2");
+          if (current_behavior_)
+            current_behavior_->command_s2();
+          break;
+        case ControlRequest::COMMAND_RESET_EMERGENCY:
         RCLCPP_WARN(this->get_logger(), "COMMAND_RESET_EMERGENCY");
-        setEmergencyMode(false);
-        break;
+          setEmergencyMode(false);
+          break;
+      }
     }
   }
 
@@ -466,10 +499,12 @@ private:
   // State
   MowerLogicConfig config_;
   std::shared_ptr<SharedState> shared_state_;
+  std::mutex behavior_mutex_;
   Behavior* current_behavior_ = nullptr;
   std::atomic<bool> mower_allowed_{ false };
   rclcpp::Time last_good_gps_;
   rclcpp::Time joy_vel_time_;
+  bool gps_initialized_;
   mower_msgs::msg::HighLevelStatus high_level_status_;
   std::vector<xbot_msgs::msg::ActionInfo> root_actions_;
 

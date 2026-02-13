@@ -13,6 +13,8 @@ MapServerNode::MapServerNode(const rclcpp::NodeOptions& options) : rclcpp::Node(
   configureGaussianBlur();
 
   declare_parameter("world_frame", "map");
+  grid_resolution_ = declare_parameter("grid.resolution", 0.1);
+  grid_max_size_ = declare_parameter("grid.max_size", 2000);
 
   auto occupancy_grid_topic_name_ = declare_parameter("grid.topic_name", "map_grid");
   occupancy_grid_publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -84,7 +86,7 @@ void MapServerNode::configureMap()
   {
     map_file_ = declare_parameter("path", "~/.openmower/map.geojson");
     RCLCPP_INFO(get_logger(), "Using GeoJSON map: %s", map_file_.c_str());
-    map_io_ = new GeoJSONMap(map_file_, std::shared_ptr<MapServerNode>(this, [](MapServerNode*) {}));
+    map_io_ = std::make_unique<GeoJSONMap>(map_file_, std::shared_ptr<MapServerNode>(this, [](MapServerNode*) {}));
 
     return;
   }
@@ -265,7 +267,7 @@ void MapServerNode::configureGaussianBlur()
         declare_parameter("map.gaussian_blur.kernel", std::vector<double>{ 1, 2, 1, 2, 4, 2, 1, 2, 1 });
     std::vector<float> kernel_float(kernel.begin(), kernel.end());
 
-    gaussian_filter_ = new SomeGaussianFilter(kernel_float);
+    gaussian_filter_ = std::make_unique<SomeGaussianFilter>(kernel_float);
   }
 }
 
@@ -326,10 +328,10 @@ nav_msgs::msg::OccupancyGrid MapServerNode::mapToOccupancyGrid(msg::Map map)
   occupancy_grid.info.origin.position.y = minY;
 
   // cell size in meters - get from parameter
-  occupancy_grid.info.resolution = declare_parameter("grid.resolution", 0.1);
+  occupancy_grid.info.resolution = grid_resolution_;
 
   // Limit the max size of the grid to avoid memory issues with large areas
-  const int MAX_GRID_SIZE = declare_parameter("grid.max_size", 2000);
+  const int MAX_GRID_SIZE = grid_max_size_;
   int width = std::min(MAX_GRID_SIZE, static_cast<int>((maxX - minX) / occupancy_grid.info.resolution));
   int height = std::min(MAX_GRID_SIZE, static_cast<int>((maxY - minY) / occupancy_grid.info.resolution));
 

@@ -346,10 +346,12 @@ void GeoJSONMap::publishDatum()
   geo_point.latitude = datum_lat_;
   geo_point.longitude = datum_lon_;
 
-  auto datum_geopoint_publisher = node_->create_publisher<geographic_msgs::msg::GeoPoint>(
-      "map/datum", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-  datum_geopoint_publisher->publish(geo_point);
-  datum_geopoint_publisher.reset();
+  if (!datum_geopoint_publisher_)
+  {
+    datum_geopoint_publisher_ = node_->create_publisher<geographic_msgs::msg::GeoPoint>(
+        "map/datum", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  }
+  datum_geopoint_publisher_->publish(geo_point);
 
   RCLCPP_INFO(node_->get_logger(), "Datum published");
   RCLCPP_INFO(node_->get_logger(), "Datum: %f, %f, %f", geo_point.latitude, geo_point.longitude, geo_point.altitude);

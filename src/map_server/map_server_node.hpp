@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -38,7 +39,7 @@ private:
   visualization_msgs::msg::MarkerArray mapToVisualizationMarkers(msg::Map map);
   geometry_msgs::msg::PoseArray dockingStationsToPoseArray(msg::Map map);
 
-  MapIO* map_io_;
+  std::unique_ptr<MapIO> map_io_;
 
   void fillGridWithPolygon(nav_msgs::msg::OccupancyGrid& occupancy_grid, const geometry_msgs::msg::Polygon& polygon,
                            uint8_t value);
@@ -55,7 +56,9 @@ private:
   void configureMap();
   void saveAndPublishMap();
 
-  SomeGaussianFilter* gaussian_filter_;
+  std::unique_ptr<SomeGaussianFilter> gaussian_filter_;
+  double grid_resolution_ = 0.1;
+  int grid_max_size_ = 2000;
   msg::Map current_map_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr occupancy_grid_publisher_;
   rclcpp::Publisher<msg::Map>::SharedPtr map_publisher_;
