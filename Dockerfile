@@ -83,4 +83,4 @@ WORKDIR $WORKSPACE
 ENV WORKSPACE=$WORKSPACE
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["ros2", "launch", "open_mower_next", "openmower.launch.py"]
+CMD ["ros2", "launch", "/opt/ws/launch/openmower.launch.py"]
