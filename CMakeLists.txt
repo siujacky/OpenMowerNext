@@ -32,8 +32,16 @@ find_package(unique_identifier_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(opennav_docking REQUIRED)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/geographiclib/")
-find_package(GeographicLib REQUIRED)
+# Try CMake config mode first (works with GeographicLib 2.x), fall back to Find module
+find_package(GeographicLib CONFIG QUIET)
+if(NOT GeographicLib_FOUND)
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/geographiclib/")
+  find_package(GeographicLib REQUIRED)
+endif()
+if(NOT GeographicLib_LIBRARIES)
+  # GeographicLib 2.x config mode sets target but not legacy variables
+  set(GeographicLib_LIBRARIES GeographicLib::GeographicLib)
+endif()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
         "src/srv/RemoveArea.srv"
