@@ -46,10 +46,11 @@ namespace mower_logic
 class MowerLogicNode : public rclcpp::Node
 {
 public:
-  MowerLogicNode() : Node("mower_logic"),
-    last_good_gps_(0, 0, RCL_ROS_TIME),
-    joy_vel_time_(0, 0, RCL_ROS_TIME),
-    gps_initialized_(false)
+  MowerLogicNode()
+    : Node("mower_logic")
+    , last_good_gps_(0, 0, RCL_ROS_TIME)
+    , joy_vel_time_(0, 0, RCL_ROS_TIME)
+    , gps_initialized_(false)
   {
     RCLCPP_INFO(this->get_logger(), "Initializing Mower Logic Node");
 
@@ -459,7 +460,7 @@ private:
             current_behavior_->command_s2();
           break;
         case ControlRequest::COMMAND_RESET_EMERGENCY:
-        RCLCPP_WARN(this->get_logger(), "COMMAND_RESET_EMERGENCY");
+          RCLCPP_WARN(this->get_logger(), "COMMAND_RESET_EMERGENCY");
           setEmergencyMode(false);
           break;
       }

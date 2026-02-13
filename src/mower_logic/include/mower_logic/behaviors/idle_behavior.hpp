@@ -45,8 +45,8 @@ public:
 
 private:
   bool stay_docked_ = false;
-  std::atomic<bool> manual_start_mowing_{false};
-  std::atomic<bool> start_area_recorder_{false};
+  std::atomic<bool> manual_start_mowing_{ false };
+  std::atomic<bool> start_area_recorder_{ false };
   std::vector<xbot_msgs::msg::ActionInfo> actions_;
 };
 
